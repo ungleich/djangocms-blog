@@ -48,6 +48,27 @@ class BlogLatestEntriesPlugin(BlogPlugin):
         return context
 
 
+class BlogLatestEntriesCustomPlugin(BlogPlugin, BaseBlogListView):
+    """
+    Non cached plugin which returns the latest posts taking into account the
+      user / toolbar state
+    """
+    name = get_setting('LATEST_ENTRIES_PLUGIN_NAME')
+    model = LatestPostsPlugin
+    form = LatestEntriesForm
+    filter_horizontal = ('categories',)
+    fields = ['app_config', 'latest_posts', 'tags', 'categories'] + \
+        ['template_folder'] if len(get_setting('PLUGIN_TEMPLATE_FOLDERS')) > 1 else []
+    cache = False
+    base_render_template = 'post_list.html'
+
+    def render(self, context, instance, placeholder):
+        context = super(BlogLatestEntriesCustomPlugin, self).render(context, instance, placeholder)
+        context['posts_list'] = instance.get_posts(context['request'], published_only=False)
+        context['TRUNCWORDS_COUNT'] = get_setting('POSTS_LIST_TRUNCWORDS_COUNT')
+        return context
+
+
 class BlogLatestEntriesPluginCached(BlogPlugin):
     """
     Cached plugin which returns the latest published posts
